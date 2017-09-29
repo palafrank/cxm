@@ -2,7 +2,7 @@ package main
 import (
   "net"
   "fmt"
-  "./lib"
+  "pktlib"
 )
 
 func ValidateCxmPkt(msg []byte, len int) bool {

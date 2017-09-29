@@ -1,7 +1,7 @@
 package main
 import "fmt"
 import "net"
-import "./lib"
+import "pktlib"
 import "os"
 
 var parseFile = "./testdata/isim.cdf"

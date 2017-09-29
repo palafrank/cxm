@@ -2,7 +2,7 @@ package main
 import (
   "os"
   "fmt"
-  "./lib"
+  "pktlib"
 )
 
 type pktFlow struct {

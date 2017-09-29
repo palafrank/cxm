@@ -1,8 +1,8 @@
-package main
+package main 
 import (
   "fmt"
   "net"
-  "./../lib"
+  "pktlib"
   "math/rand"
   "time"
 )

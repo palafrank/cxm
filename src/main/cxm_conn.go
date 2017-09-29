@@ -4,7 +4,7 @@ import "fmt"
 import "bufio"
 import "strings"
 import "strconv"
-import "./lib"
+import "pktlib"
 
 type ConnectionPorts struct {
     Comp string
