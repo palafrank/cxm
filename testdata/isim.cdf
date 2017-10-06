@@ -1,14 +1,4 @@
-###################################################################
-#   ISIM CDF File.
-#
-#   SUMMARY:
-#      Setup Name                     :  sw022-11_Eagles_MultiSiteSim_Sanity
-#      Number of Chassis              :  13
-#      Number of Inter-Chassis Links  :  20
-#      Time-Stamp                     :  Tue Feb  7 12:23:05 2017
-#
-###################################################################
-# CDF Compomemts:
+
 
 # Components inside Chassis: TV1 (Model: None)
 comp {
@@ -406,4 +396,3 @@ conn STATE=active TYPE=bus LF002_SUG0,14 XT001_EXT0,1 LF002_TAP0,14
 conn STATE=active TYPE=bus SP01LC01_SUG1,9 XT001_EXT0,2 SP01LC01_TAP0,12
 conn STATE=active TYPE=bus SP02LC01_SUG1,9 XT001_EXT0,3 SP02LC01_TAP0,12
 conn STATE=active TYPE=bus TV001_ITV0,33 XT001_EXT0,4
-
