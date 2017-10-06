@@ -141,5 +141,6 @@ func parseCdfConfig(path string, writer CxmWriter) ParserError {
 			parseCdfConn(scanner, writer)
 		}
 	}
+	writer.ParseComplete()
 	return ParserErrorCode_OK
 }

@@ -5,11 +5,10 @@ import "net"
 import pktutil "pktlib"
 import "os"
 import "cxmparser"
+import "pkttracker"
 
 var parseFile = "./testdata/isim.cdf"
 var trackFile = "./adm_tracker.log"
-var pktSigOffset = 4 //Offset from the end of the packet
-var pktSigLen = 5    //Length in bytes
 
 func HandleWireConnection(conn *net.TCPConn) int {
 	defer conn.Close()
@@ -114,7 +113,9 @@ func admArgParse(args []string) bool {
 }
 
 func main() {
+
 	MainChannel := make(chan []byte)
+
 	args := os.Args
 	if (len(args) > 1) && !admArgParse(args[1:]) {
 		fmt.Println("Error in command line arguments")
@@ -124,14 +125,15 @@ func main() {
 
 	err := cxmparser.ParseConfig(parseFile, &g_components)
 	if err.Fail() {
-		fmt.Println("Parsing configuration file failed")
+		fmt.Println("Parsing configuration file failed", parseFile)
 		return
 	}
 
-	AddCompsToScidMap()
-	PktTrackerInit()
-	StartAllServers(MainChannel)
+	g_pkttracker_handle = pkttracker.PktTrackerInit()
+
 	fmt.Println("Done with parsing ", parseFile, ". Start servers....")
+	StartAllServers(MainChannel)
+
 	for {
 		select {
 		case data := <-MainChannel:

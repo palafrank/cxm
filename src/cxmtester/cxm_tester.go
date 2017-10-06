@@ -61,7 +61,7 @@ func CreateCxmDataMsg(msg []byte, len int, scid int, port int) {
 	pktutil.SetPortInPkt(msg, port)
 	pktutil.SetHdrTypeInPkt(msg, pktutil.PKT_HDR_TYPE_DATA)
 	pktutil.SetDataPktLen(msg, len-pktutil.PKT_HDR_LEN)
-	pktutil.SetPktSignature(4, 5, msg, sig)
+	pktutil.SetPktSignature(msg, sig)
 }
 
 func ClientConnect(port int) *net.TCPConn {

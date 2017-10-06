@@ -4,6 +4,7 @@ import "fmt"
 
 import "strconv"
 import pktutil "pktlib"
+import "pkttracker"
 
 type ConnectionPorts struct {
 	Comp         string
@@ -38,6 +39,8 @@ func (c Connection) SwitchDataPacket(msg []byte, pktlen int) {
 			comp := GetCompFromScid(port.Scid)
 			fmt.Println("Switching packet from (SCID, PORT: ", SrcScid, SrcPort,
 				") -> (SCID, PORT: ", port.Scid, port.Port, ") len ", len(msg))
+			pkttracker.PktTracker(g_pkttracker_handle, pktutil.GetPktSignature(msg), SrcScid, SrcPort, port.Scid, port.Port)
+
 			comp.Channel <- &msg
 			//Send the packet to appropriate SCID channel
 		}

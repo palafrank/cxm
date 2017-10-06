@@ -70,7 +70,10 @@ func (c *ParserInterface) ConnAddPort(comp_name string, port int, conn_int inter
 }
 
 func (c *ParserInterface) ConnFinish(z interface{}) {
+}
 
+func (c *ParserInterface) ParseComplete() {
+	AddCompsToScidMap()
 }
 
 var g_components ParserInterface

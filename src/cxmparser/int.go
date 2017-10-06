@@ -9,6 +9,7 @@ type CxmWriter interface {
 	ConnFinish(interface{})
 	CompAlloc() interface{}
 	CompFinish(interface{})
+	ParseComplete()
 }
 
 type ParserError int

@@ -6,6 +6,8 @@ import (
 	pktutil "pktlib"
 )
 
+var g_pkttracker_handle interface{}
+
 func ValidateCxmPkt(msg []byte, len int) bool {
 	return true
 }
@@ -63,7 +65,6 @@ func ProcessDataPacket(msg []byte, len int) {
 		return
 	}
 	fmt.Println("Data packet received")
-	PktTracker(msg, scid, port)
 
 	conn := GetConnFromScidAndPort(scid, port)
 	if conn != nil {
@@ -118,7 +119,6 @@ func WriteCxmPackets(sig chan int, scid int, conn *net.TCPConn) {
 				fmt.Println("Error transmitting packet")
 			} else {
 				fmt.Println("Sent message of len ", len)
-				PktTracker(*data, scid, pktutil.GetPortFromPkt(*data))
 			}
 		case down = <-sig:
 			fmt.Println("Write function for scid ", scid, " shutting down.", down)
