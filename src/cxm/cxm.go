@@ -4,6 +4,7 @@ import "fmt"
 import "net"
 import pktutil "pktlib"
 import "os"
+import "cxmparser"
 
 var parseFile = "./testdata/isim.cdf"
 var trackFile = "./adm_tracker.log"
@@ -114,7 +115,6 @@ func admArgParse(args []string) bool {
 
 func main() {
 	MainChannel := make(chan []byte)
-	fmt.Println("Hello World")
 	args := os.Args
 	if (len(args) > 1) && !admArgParse(args[1:]) {
 		fmt.Println("Error in command line arguments")
@@ -122,11 +122,13 @@ func main() {
 		return
 	}
 
-	err, _, _ := ParseConfig(parseFile)
-	if err != 0 {
-		fmt.Println("Error opening the configuration file ", parseFile)
+	err := cxmparser.ParseConfig(parseFile, &g_components)
+	if err.Fail() {
+		fmt.Println("Parsing configuration file failed")
 		return
 	}
+
+	AddCompsToScidMap()
 	PktTrackerInit()
 	StartAllServers(MainChannel)
 	fmt.Println("Done with parsing ", parseFile, ". Start servers....")
@@ -138,7 +140,7 @@ func main() {
 			fmt.Println("Message of length ", len(data),
 				"received on the main channel For SCID: ", scid)
 			comp := GetCompFromScid(scid)
-			comp.Channel <- data
+			comp.Channel <- &data
 		}
 	}
 

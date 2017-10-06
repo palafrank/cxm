@@ -7,9 +7,9 @@ TODO:
 package main
 
 import "fmt"
-import "bufio"
+
 import "strings"
-import "strconv"
+
 import "net"
 
 type Port struct {
@@ -19,49 +19,87 @@ type Port struct {
 }
 
 type Component struct {
-	Name        string
-	Remote      bool
-	LinkAdmin   bool
-	Type        string
-	Scid        int
-	MinPort     int
-	MaxPort     int
-	Ports       []*Port
-	Connections map[int]*Connection
-	Channel     chan []byte
-	Sock        *net.TCPConn
+	Name        string              `cdf:"NAME"`
+	Remote      bool                `cdf:"REMOTE"`
+	LinkAdmin   bool                `cdf:"LINK_ADMIN"`
+	Type        string              `cdf:"TYPE"`
+	Scid        int                 `cdf:"SCID"`
+	MinPort     int                 `cdf:"MINPORT"`
+	MaxPort     int                 `cdf:"MAXPORT"`
+	Ports       []*Port             ``
+	Connections map[int]*Connection ``
+	Channel     chan *[]byte        ``
+	Sock        *net.TCPConn        ``
 }
 
-var comp_start = "comp {"
-var comp_end = "}"
-var g_comp_array []*Component
-var g_scid_mapped_comp map[int]*Component
+const g_max_port_per_comp = 10
+
+type ParserInterface struct {
+	comp_array       []*Component
+	conn_array       []*Connection
+	scid_mapped_comp map[int]*Component
+}
+
+func (c *ParserInterface) CompAlloc() interface{} {
+	return new(Component)
+}
+
+func (c *ParserInterface) CompFinish(comp_int interface{}) {
+	comp := comp_int.(*Component)
+	comp.Connections = make(map[int]*Connection, (comp.MaxPort - comp.MinPort))
+	c.comp_array = append(c.comp_array, comp)
+	comp.Channel = make(chan *[]byte, 10)
+}
+
+func (c *ParserInterface) ConnAlloc() interface{} {
+	conn := new(Connection)
+	conn.Ports = make(map[string]*ConnectionPorts, g_max_port_per_comp)
+	return conn
+}
+
+func (c *ParserInterface) ConnAddPort(comp_name string, port int, conn_int interface{}) {
+	conn := conn_int.(*Connection)
+	connPort := new(ConnectionPorts)
+	connPort.Comp = comp_name
+	connPort.Port = port
+	comp := GetCompFromName(comp_name)
+	connPort.Scid = comp.Scid
+	key := conn.GenerateKeyForConnPort(comp.Scid, connPort.Port)
+	conn.Ports[key] = connPort
+	comp.AddConnectionToComponent(connPort, conn)
+}
+
+func (c *ParserInterface) ConnFinish(z interface{}) {
+
+}
+
+var g_components ParserInterface
 
 func IsValidScid(scid int) bool {
-	if g_scid_mapped_comp[scid] == nil {
+	if g_components.scid_mapped_comp[scid] == nil {
 		return false
 	}
 	return true
 }
 
 func GetNumComps() int {
-	return len(g_comp_array)
+	return len(g_components.comp_array)
 }
 
 func GetCompFromName(name string) *Component {
-	for i := 0; i < len(g_comp_array); i++ {
-		if strings.Compare(name, g_comp_array[i].Name) == 0 {
-			return g_comp_array[i]
+	for i := 0; i < len(g_components.comp_array); i++ {
+		if strings.Compare(name, g_components.comp_array[i].Name) == 0 {
+			return g_components.comp_array[i]
 		}
 	}
 	return nil
 }
 
 func AddCompsToScidMap() {
-	g_scid_mapped_comp = make(map[int]*Component, len(g_comp_array))
+	g_components.scid_mapped_comp = make(map[int]*Component, len(g_components.comp_array))
 
-	for i := 0; i < len(g_comp_array); i++ {
-		g_scid_mapped_comp[g_comp_array[i].Scid] = g_comp_array[i]
+	for i := 0; i < len(g_components.comp_array); i++ {
+		g_components.scid_mapped_comp[g_components.comp_array[i].Scid] = g_components.comp_array[i]
 		//fmt.Println("Adding scid ", g_comp_array[i].Scid)
 		//fmt.Println("Added scid ", g_scid_mapped_comp[g_comp_array[i].Scid] )
 	}
@@ -70,11 +108,11 @@ func AddCompsToScidMap() {
 func GetConnFromScidAndPort(scid int, port int) *Connection {
 	//comp := g_scid_mapped_comp[scid]
 	//fmt.Println("Get the scid ", comp)
-	return g_scid_mapped_comp[scid].Connections[port]
+	return g_components.scid_mapped_comp[scid].Connections[port]
 }
 
 func GetCompFromScid(scid int) *Component {
-	return g_scid_mapped_comp[scid]
+	return g_components.scid_mapped_comp[scid]
 }
 
 func (c *Component) InitComponent(socket *net.TCPConn) {
@@ -106,61 +144,4 @@ func (c Component) PrintComponent() {
 
 func (c Component) ValidateFields() bool {
 	return true
-}
-
-func (c *Component) ParsePort(ports []string) {
-	portNums := strings.Split(ports[1], "..")
-	minPort, _ := strconv.Atoi(portNums[0])
-	maxPort, _ := strconv.Atoi(portNums[1])
-	c.MinPort = minPort
-	c.MaxPort = maxPort
-	c.Connections = make(map[int]*Connection, (maxPort - minPort))
-	for i := minPort; i <= maxPort; i++ {
-		port := new(Port)
-		port.PortNum = i
-		if len(ports) >= 4 {
-			port.LinkType = strings.TrimPrefix(ports[2], "LINK=")
-			port.PhyType = strings.TrimPrefix(ports[3], "PHY=")
-		}
-		if c.ValidateFields() == true {
-			c.Ports = append(c.Ports, port)
-		} else {
-			//Error handling in parser
-		}
-	}
-}
-
-func parse_comp(scanner *bufio.Scanner) {
-	comp := new(Component)
-	for strings.Compare(scanner.Text(), comp_end) != 0 && scanner.Scan() {
-		trimmedString := strings.TrimSpace(scanner.Text())
-		splitString := strings.Split(trimmedString, " ")
-		switch splitString[0] {
-		case "NAME":
-			comp.Name = splitString[1]
-		case "REMOTE":
-			if strings.Compare(splitString[1], "yes") == 0 {
-				comp.Remote = true
-			} else {
-				comp.Remote = false
-			}
-		case "LINK_ADMIN":
-			if strings.Compare(splitString[1], "yes") == 0 {
-				comp.LinkAdmin = true
-			} else {
-				comp.LinkAdmin = false
-			}
-		case "TYPE":
-			comp.Type = splitString[1]
-		case "SCID":
-			comp.Scid, _ = strconv.Atoi(splitString[1])
-		case "PORT":
-			comp.ParsePort(splitString)
-		case "}":
-		default:
-			fmt.Println("Unkown component attribute ", splitString[0])
-		}
-	}
-	comp.Channel = make(chan []byte, 10)
-	g_comp_array = append(g_comp_array, comp)
 }

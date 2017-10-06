@@ -112,13 +112,13 @@ func WriteCxmPackets(sig chan int, scid int, conn *net.TCPConn) {
 	for {
 		select {
 		case data := <-comp.Channel:
-			fmt.Println("Received message to send to SCID: ", scid, " len ", len(data))
-			len, err := conn.Write(data)
+			fmt.Println("Received message to send to SCID: ", scid, " len ", len(*data))
+			len, err := conn.Write(*data)
 			if err != nil {
 				fmt.Println("Error transmitting packet")
 			} else {
 				fmt.Println("Sent message of len ", len)
-				PktTracker(data, scid, pktutil.GetPortFromPkt(data))
+				PktTracker(*data, scid, pktutil.GetPortFromPkt(*data))
 			}
 		case down = <-sig:
 			fmt.Println("Write function for scid ", scid, " shutting down.", down)
